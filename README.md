@@ -6,6 +6,8 @@
 
 <p align="center"><a href="https://github.com/yashoncode/dby/releases/latest"><b>⬇ Download the latest DBY APK</b></a></p>
 
+<p align="center"><img src=".github/assets/poster.png" alt="DBY on Android: connections list, SQL editor and row editor with SQL preview"></p>
+
 ## Features
 
 - ⚡ **Fast.** A native Rust core talks the MySQL wire protocol directly. No JDBC, no WebView. Tables open and scroll quickly, even over mobile data to AWS RDS.
@@ -19,6 +21,19 @@
 - 📥 **Import connections** from a dbx export, plain or passphrase-encrypted.
 - 💎 **Frosted glass design** with a dark theme, accent colours and haptics.
 - 🔄 **Updates itself** from GitHub Releases. No Play Store needed.
+
+## Screenshots
+
+<p align="center">
+  <img src=".github/assets/screenshots/connections.png" width="32%" alt="Connections tagged PROD, STAGING, DEV and LOCAL">
+  <img src=".github/assets/screenshots/schema.png" width="32%" alt="Schema explorer with table sizes">
+  <img src=".github/assets/screenshots/table.png" width="32%" alt="Table data as cards with status facets">
+</p>
+<p align="center">
+  <img src=".github/assets/screenshots/edit-row.png" width="32%" alt="Edit row sheet showing the SQL that will run">
+  <img src=".github/assets/screenshots/sql.png" width="32%" alt="SQL editor with syntax colouring">
+  <img src=".github/assets/screenshots/result.png" width="32%" alt="Query result grid">
+</p>
 
 ## Works with
 
