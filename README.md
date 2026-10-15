@@ -50,6 +50,3 @@ The Android app is Kotlin and Jetpack Compose. The database core is Rust (`core/
 
 **Is DBY free?** Yes, free with no ads and no tracking.
 
----
-
-<sub>Keywords: MySQL client Android, MariaDB client Android, MySQL app for Android, SQL client mobile, database client Android, AWS RDS MySQL Android, Aurora MySQL client, MySQL GUI Android, MySQL workbench alternative Android, phpMyAdmin alternative mobile, DBeaver alternative Android, run SQL queries on phone, MySQL viewer, MySQL editor, database browser, database manager, open source database client, Kotlin Jetpack Compose, Rust.</sub>
