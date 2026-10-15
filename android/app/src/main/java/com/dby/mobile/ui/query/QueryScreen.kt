@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -414,7 +415,7 @@ private fun ResultView(model: QueryModel, onRow: (Int) -> Unit, onExport: () -> 
     }
 }
 
-/** One result row as name / value pairs: tap a field to copy its value, long-press for "name: value". */
+/** One result row as name / value pairs: tap a field to copy its value, long-press for "name: value", or switch to Select text to copy part of one. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, onDismiss: () -> Unit) {
@@ -426,22 +427,26 @@ private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, on
     val context = LocalContext.current
     val haptic = rememberHaptics()
     var menuOpen by remember { mutableStateOf(false) }
+    var selecting by remember { mutableStateOf(false) }
     Sheet(backdrop, onDismiss) {
         SheetHeader("Row ${index + 1}", subtitle = "of ${count(result.rows.size.toLong())} · ${columns.size} fields", onClose = onDismiss) {
             RoundButton(DbyIcons.Copy, "Copy row", { menuOpen = true })
         }
+        Segmented(listOf(false, true), selecting, { selecting = it }, { if (it) "Select text" else "Tap to copy" }, Modifier.fillMaxWidth())
         Column(Modifier.weight(1f, fill = false).fillMaxWidth().lightGlass(RoundedCornerShape(20.dp)).verticalScroll(rememberScrollState())) {
             columns.forEachIndexed { i, column ->
                 if (i > 0) Hairline()
                 val cell = row.getOrElse(i) { Cell.Null }
                 val value = cell.rawText() ?: cell.display()
+                // Select text drops the row's tap and long-press so they don't fight the text selection.
+                val copyOnTap = if (selecting) Modifier else Modifier.combinedClickable(
+                    onClick = { copyText(context, column.name, value) },
+                    onLongClick = { haptic(HapticFeedbackType.LongPress); copyText(context, column.name, "${column.name}: $value") },
+                )
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = { copyText(context, column.name, value) },
-                            onLongClick = { haptic(HapticFeedbackType.LongPress); copyText(context, column.name, "${column.name}: $value") },
-                        )
+                        .then(copyOnTap)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -450,15 +455,21 @@ private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, on
                         var expanded by remember(index, i) { mutableStateOf(false) }
                         var long by remember(index, i) { mutableStateOf(false) }
                         Text(column.name, style = Type.Caption.copy(fontFamily = GeistMono, fontWeight = FontWeight.SemiBold), color = Dby.Secondary)
-                        Text(
-                            cell.display(),
-                            style = Type.Mono,
-                            color = if (cell is Cell.Null) Dby.Faint else Dby.Fg,
-                            maxLines = if (expanded) Int.MAX_VALUE else 3,
-                            overflow = TextOverflow.Ellipsis,
-                            onTextLayout = { if (!expanded) long = it.hasVisualOverflow },
-                        )
-                        if (long) {
+                        if (selecting) {
+                            SelectionContainer {
+                                Text(cell.display(), style = Type.Mono, color = if (cell is Cell.Null) Dby.Faint else Dby.Fg)
+                            }
+                        } else {
+                            Text(
+                                cell.display(),
+                                style = Type.Mono,
+                                color = if (cell is Cell.Null) Dby.Faint else Dby.Fg,
+                                maxLines = if (expanded) Int.MAX_VALUE else 3,
+                                overflow = TextOverflow.Ellipsis,
+                                onTextLayout = { if (!expanded) long = it.hasVisualOverflow },
+                            )
+                        }
+                        if (long && !selecting) {
                             Text(
                                 if (expanded) "Collapse" else "Expand",
                                 style = Type.Caption.copy(fontWeight = FontWeight.SemiBold),
@@ -467,11 +478,16 @@ private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, on
                             )
                         }
                     }
-                    Icon(DbyIcons.Copy, contentDescription = null, tint = Dby.Faint, modifier = Modifier.size(16.dp))
+                    if (!selecting) Icon(DbyIcons.Copy, contentDescription = null, tint = Dby.Faint, modifier = Modifier.size(16.dp))
                 }
             }
         }
-        Text("Tap a field to copy its value. Long-press to copy its name and value.", style = Type.Caption, color = Dby.Secondary)
+        Text(
+            if (selecting) "Long-press a value, then drag the handles to pick the part you want to copy."
+            else "Tap a field to copy its value. Long-press to copy its name and value.",
+            style = Type.Caption,
+            color = Dby.Secondary,
+        )
     }
     if (menuOpen) {
         ActionSheet(

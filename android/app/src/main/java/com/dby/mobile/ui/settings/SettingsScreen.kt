@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,7 @@ fun SettingsScreen(app: DbyApp) {
     val prefs = app.prefs
     val nav = app.nav
     val activity = LocalActivity.current
+    val uri = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var problem by remember { mutableStateOf<Throwable?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -207,6 +209,16 @@ fun SettingsScreen(app: DbyApp) {
                 }
                 Hairline()
                 ListRow("Licences", onClick = { nav.push(Screen.Licences) })
+            }
+
+            SectionHeader("Support")
+            GroupCard {
+                ListRow(
+                    "Buy me a coffee",
+                    subtitle = "DBY is free. A coffee is a kind thank-you.",
+                    onClick = { runCatching { uri.openUri("https://buymeacoffee.com/yashwynth") } },
+                    leading = { Text("☕", style = Type.Body) },
+                )
             }
         }
     }

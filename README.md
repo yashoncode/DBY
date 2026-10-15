@@ -50,3 +50,7 @@ The Android app is Kotlin and Jetpack Compose. The database core is Rust (`core/
 
 **Is DBY free?** Yes, free with no ads and no tracking.
 
+## Support
+
+DBY is free and always will be. If it has saved you a trip back to the laptop and you feel like saying thanks, you can [buy me a coffee](https://buymeacoffee.com/yashwynth) ☕. No pressure at all. A star on GitHub or a bug report helps just as much.
+
