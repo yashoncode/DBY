@@ -7,6 +7,7 @@ import com.dby.mobile.data.bytes
 import com.dby.mobile.data.count
 import com.dby.mobile.data.display
 import com.dby.mobile.data.isTrimmed
+import com.dby.mobile.data.prettyJson
 import com.dby.mobile.data.rawText
 import com.dby.mobile.data.sentence
 import org.junit.Assert.assertEquals
@@ -70,7 +71,8 @@ class FormatTest {
             DbyException.ReadOnlyBlocked("Cannot execute statement in a READ ONLY transaction.").sentence(),
         )
         assertEquals("This statement changes data; confirm it first.", DbyException.ReadOnlyBlocked("this statement changes data; confirm it first").sentence())
-        assertEquals("The server refused it (error 1146).", DbyException.Server(1146u, "Table 'x' doesn't exist").sentence())
+        assertEquals("Table 'x' doesn't exist (error 1146).", DbyException.Server(1146u, "Table 'x' doesn't exist").sentence())
+        assertEquals("The server refused it (error 1064).", DbyException.Server(1064u, "").sentence())
         assertEquals("boom", IllegalStateException("boom").sentence())
     }
 
@@ -89,5 +91,25 @@ class FormatTest {
         assertEquals(1, parsed.getInt("id"))
         assertTrue(parsed.isNull("id_2"))
         assertEquals("0.10", parsed.getString("amount"))
+    }
+
+    @Test
+    fun json_is_reindented_without_touching_values() {
+        val raw = """ {"id":18446744073709551615,"n":1.10, "s":"a, b: {c}","e":[ ],"o":{"q":"say \"hi\""}} """
+        val expected = """
+            {
+              "id": 18446744073709551615,
+              "n": 1.10,
+              "s": "a, b: {c}",
+              "e": [],
+              "o": {
+                "q": "say \"hi\""
+              }
+            }
+        """.trimIndent()
+        assertEquals(expected, prettyJson(raw))
+        assertEquals("[\n  1,\n  null\n]", prettyJson("[1,null]"))
+        assertNull(prettyJson("hello"))
+        assertNull(prettyJson("{not json"))
     }
 }

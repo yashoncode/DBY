@@ -68,7 +68,7 @@ fun Throwable.sentence(): String = when (this) {
     is DbyException.Tls -> "The secure connection failed."
     is DbyException.Auth -> "Wrong user or password."
     is DbyException.UnknownDatabase -> "That database doesn't exist on this server."
-    is DbyException.Server -> "The server refused it (error $code)."
+    is DbyException.Server -> detail.trim().trimEnd('.').replaceFirstChar { it.uppercase() }.ifEmpty { "The server refused it" } + " (error $code)."
     is DbyException.NotFound -> "It's no longer there."
     is DbyException.ReadOnlyBlocked -> detail.trimEnd('.').replaceFirstChar { it.uppercase() } + "."
     is DbyException.RowEditMismatch -> "The row was changed or deleted elsewhere, so nothing was saved."
@@ -111,6 +111,73 @@ fun rowJson(columns: List<com.dby.core.ColumnOut>, row: List<Cell>): JSONObject 
         )
     }
     return obj
+}
+
+/**
+ * JSON object or array text re-indented two spaces per level, or null when it is not JSON.
+ * Only whitespace changes: numbers and strings stay as written, so a big id is never rounded
+ * the way parsing it into a Double would.
+ */
+fun prettyJson(text: String): String? {
+    val t = text.trim()
+    if (t.isEmpty() || (t[0] != '{' && t[0] != '[')) return null
+    runCatching { if (t[0] == '{') JSONObject(t) else JSONArray(t) }.getOrElse { return null }
+    return buildString {
+        var depth = 0
+        var i = 0
+        fun newline() {
+            append('\n')
+            repeat(depth) { append("  ") }
+        }
+        while (i < t.length) {
+            val c = t[i]
+            when {
+                c == '"' || c == '\'' -> {
+                    val end = endOfJsonString(t, i)
+                    append(t, i, end)
+                    i = end
+                    continue
+                }
+                c == '{' || c == '[' -> {
+                    var j = i + 1
+                    while (j < t.length && t[j].isWhitespace()) j++
+                    if (j < t.length && (t[j] == '}' || t[j] == ']')) {
+                        append(c).append(t[j])
+                        i = j + 1
+                        continue
+                    }
+                    append(c)
+                    depth++
+                    newline()
+                }
+                c == '}' || c == ']' -> {
+                    depth--
+                    newline()
+                    append(c)
+                }
+                c == ',' -> {
+                    append(c)
+                    newline()
+                }
+                c == ':' -> append(": ")
+                !c.isWhitespace() -> append(c)
+            }
+            i++
+        }
+    }
+}
+
+/** The index just past the string that opens at [open], skipping escaped quotes. */
+fun endOfJsonString(s: String, open: Int): Int {
+    var i = open + 1
+    while (i < s.length) {
+        when (s[i]) {
+            '\\' -> i += 2
+            s[open] -> return i + 1
+            else -> i++
+        }
+    }
+    return s.length
 }
 
 /** The rows as a JSON array of objects, for export. */

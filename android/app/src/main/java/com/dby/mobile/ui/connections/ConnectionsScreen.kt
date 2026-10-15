@@ -15,14 +15,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +63,8 @@ import com.dby.mobile.ui.common.GroupCard
 import com.dby.mobile.ui.common.Hairline
 import com.dby.mobile.ui.common.LargeTitle
 import com.dby.mobile.ui.common.ListRow
+import androidx.compose.material3.Icon
+import com.dby.mobile.ui.common.Chevron
 import com.dby.mobile.ui.common.RoundButton
 import com.dby.mobile.ui.common.SearchField
 import com.dby.mobile.ui.common.SectionHeader
@@ -255,7 +255,18 @@ private fun ConnectionCard(list: List<SavedConnection>, sessions: Sessions, onOp
                 subtitle = if (session != null) "Connected · ${session.serverInfo().version} · ${c.host}" else "${c.user}@${c.host}:${c.port}" + if (c.database.isNotBlank()) " · ${c.database}" else "",
                 onClick = { onOpen(c) },
                 onLongClick = { onMenu(c) },
-                leading = { Avatar(c, connected = session != null) },
+                leading = { Avatar(c) },
+                trailing = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (session != null) DbyIcons.Unplug else DbyIcons.PlugOff,
+                            contentDescription = if (session != null) "Connected" else "Not connected",
+                            tint = if (session != null) Dby.Success else Dby.Faint,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Chevron()
+                    }
+                },
                 titleExtra = { EnvBadge(c.env) },
             )
         }
@@ -263,15 +274,10 @@ private fun ConnectionCard(list: List<SavedConnection>, sessions: Sessions, onOp
 }
 
 @Composable
-private fun Avatar(c: SavedConnection, connected: Boolean) {
+private fun Avatar(c: SavedConnection) {
     val (fg, bg) = c.env.colors()
-    Box {
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(bg), contentAlignment = Alignment.Center) {
-            Text(initials(c.name), style = Type.Secondary.copy(fontWeight = FontWeight.Bold), color = fg)
-        }
-        if (connected) {
-            Box(Modifier.align(Alignment.BottomEnd).offset(3.dp, 3.dp).size(12.dp).clip(CircleShape).background(Dby.Bg).padding(2.dp).clip(CircleShape).background(Dby.Success))
-        }
+    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(bg), contentAlignment = Alignment.Center) {
+        Text(initials(c.name), style = Type.Secondary.copy(fontWeight = FontWeight.Bold), color = fg)
     }
 }
 

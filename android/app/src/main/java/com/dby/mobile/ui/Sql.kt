@@ -7,6 +7,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import com.dby.mobile.data.endOfJsonString
 
 enum class Token { Keyword, Text, Number, Comment }
 
@@ -83,6 +84,35 @@ private fun endOfQuoted(sql: String, open: Int, quote: Char): Int {
 fun highlightSql(sql: String): AnnotatedString = buildAnnotatedString {
     append(sql)
     for (span in sqlSpans(sql)) addStyle(SpanStyle(color = COLORS.getValue(span.token)), span.start, span.end)
+}
+
+/** Splits JSON into coloured spans: keys as keywords, string values as text, numbers and literals as numbers. */
+fun jsonSpans(json: String): List<Span> {
+    val spans = mutableListOf<Span>()
+    var i = 0
+    while (i < json.length) {
+        val c = json[i]
+        val start = i
+        when {
+            c == '"' || c == '\'' -> {
+                i = endOfJsonString(json, i)
+                var j = i
+                while (j < json.length && json[j].isWhitespace()) j++
+                spans += Span(start, i, if (j < json.length && json[j] == ':') Token.Keyword else Token.Text)
+            }
+            c == '-' || c.isLetterOrDigit() -> {
+                while (i < json.length && (json[i].isLetterOrDigit() || json[i] in ".+-")) i++
+                spans += Span(start, i, Token.Number)
+            }
+            else -> i++
+        }
+    }
+    return spans
+}
+
+fun highlightJson(json: String): AnnotatedString = buildAnnotatedString {
+    append(json)
+    for (span in jsonSpans(json)) addStyle(SpanStyle(color = COLORS.getValue(span.token)), span.start, span.end)
 }
 
 /** Colours SQL as it is typed, without changing the text. */

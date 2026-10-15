@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,11 +66,13 @@ import com.dby.mobile.data.count
 import com.dby.mobile.data.csv
 import com.dby.mobile.data.display
 import com.dby.mobile.data.json
+import com.dby.mobile.data.prettyJson
 import com.dby.mobile.data.rawText
 import com.dby.mobile.data.rowJson
 import com.dby.mobile.topSpace
 import com.dby.mobile.ui.DbyIcons
 import com.dby.mobile.ui.SqlTransformation
+import com.dby.mobile.ui.highlightJson
 import com.dby.mobile.ui.common.Action
 import com.dby.mobile.ui.common.ActionSheet
 import com.dby.mobile.ui.common.Busy
@@ -127,7 +130,7 @@ fun QueryScreen(app: DbyApp) {
         val r = model.result
         if (uri != null && r != null) writeFile(context, uri, json(r.columns, model.fullRows()))
     }
-    LaunchedEffect(sessions.activeId, model.session) { model.rebuild() }
+    LaunchedEffect(sessions.activeId, model.session) { model.rebuild(takeOver = false) }
     BackHandler(enabled = model.showResult) { model.showResult = false }
     GlassHost(
         overlay = { backdrop ->
@@ -174,7 +177,7 @@ fun QueryScreen(app: DbyApp) {
                     RoundButton(DbyIcons.Bookmark, "Saved queries", { model.refreshSaved(); savedOpen = true })
                 }
                 LargeTitle("Query", Modifier.padding(top = 8.dp, bottom = 12.dp))
-                Segmented(Mode.entries, model.mode, { model.mode = it; model.rebuild() }, { if (it == Mode.BUILDER) "Builder" else "SQL" }, Modifier.padding(horizontal = 16.dp).fillMaxWidth())
+                Segmented(Mode.entries, model.mode, { model.mode = it; model.rebuild(takeOver = false) }, { if (it == Mode.BUILDER) "Builder" else "SQL" }, Modifier.padding(horizontal = 16.dp).fillMaxWidth())
                 (model.connector.problem ?: model.problem)?.let { ProblemBanner(it, modifier = Modifier.padding(vertical = 10.dp)) }
                 if (model.connector.busy) Busy("Connecting…")
                 when {
@@ -437,7 +440,10 @@ private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, on
             columns.forEachIndexed { i, column ->
                 if (i > 0) Hairline()
                 val cell = row.getOrElse(i) { Cell.Null }
-                val value = cell.rawText() ?: cell.display()
+                // JSON shows (and copies) formatted; every other value as it came.
+                val pretty = remember(cell) { cell.rawText()?.let(::prettyJson) }
+                val value = pretty ?: cell.rawText() ?: cell.display()
+                val shown = pretty?.let(::highlightJson) ?: AnnotatedString(cell.display())
                 // Select text drops the row's tap and long-press so they don't fight the text selection.
                 val copyOnTap = if (selecting) Modifier else Modifier.combinedClickable(
                     onClick = { copyText(context, column.name, value) },
@@ -457,11 +463,11 @@ private fun ResultRowSheet(model: QueryModel, index: Int, backdrop: Backdrop, on
                         Text(column.name, style = Type.Caption.copy(fontFamily = GeistMono, fontWeight = FontWeight.SemiBold), color = Dby.Secondary)
                         if (selecting) {
                             SelectionContainer {
-                                Text(cell.display(), style = Type.Mono, color = if (cell is Cell.Null) Dby.Faint else Dby.Fg)
+                                Text(shown, style = Type.Mono, color = if (cell is Cell.Null) Dby.Faint else Dby.Fg)
                             }
                         } else {
                             Text(
-                                cell.display(),
+                                shown,
                                 style = Type.Mono,
                                 color = if (cell is Cell.Null) Dby.Faint else Dby.Fg,
                                 maxLines = if (expanded) Int.MAX_VALUE else 3,

@@ -44,6 +44,7 @@ object DbyIcons {
     val Refresh = icon("M20 12a8 8 0 1 1-2.34-5.66", "M20 4v5h-5")
     val Edit = icon("M4 20h4L19 9l-4-4L4 16z", "m13.5 6.5 4 4")
     val Unplug = icon("M9 7V3", "M15 7V3", "M7 7h10v4a5 5 0 0 1-10 0z", "M12 16v5")
+    val PlugOff = icon("M9 7V3", "M15 7V3", "M7 7h10v4a5 5 0 0 1-10 0z", "M12 16v5", "M3 3l18 18")
     val Download = icon("M12 3v12", "m7.5 10.5 4.5 4.5 4.5-4.5", "M4 15v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3")
 }
 

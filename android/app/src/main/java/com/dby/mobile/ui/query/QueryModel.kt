@@ -91,13 +91,20 @@ class QueryModel(private val sessions: Sessions, private val prefs: Prefs) : Scr
         rebuild()
     }
 
-    /** Writes the builder's SQL into the editor, unless the person has edited it. */
-    fun rebuild() {
-        if (sqlEdited) return
+    /**
+     * Writes the builder's SQL into the editor. A change made in the builder ([takeOver]) replaces
+     * SQL edited by hand, so Show rows never runs a query the builder doesn't show; a tab switch or
+     * reconnect leaves hand edits alone.
+     */
+    fun rebuild(takeOver: Boolean = true) {
+        if (sqlEdited && !takeOver) return
         val t = table ?: return
         val s = session ?: return
         val spec = SelectSpec(t, fields.toList(), filters.filter { it.op == FilterOp.IS_NULL || it.op == FilterOp.IS_NOT_NULL || it.value.isNotEmpty() }, matchAll, sort, limit.toUInt())
-        runCatching { s.buildSelect(spec) }.onSuccess { sql = TextFieldValue(it) }
+        runCatching { s.buildSelect(spec) }.onSuccess {
+            sql = TextFieldValue(it)
+            sqlEdited = false
+        }
     }
 
     fun editSql(value: TextFieldValue) {
@@ -105,13 +112,11 @@ class QueryModel(private val sessions: Sessions, private val prefs: Prefs) : Scr
         sql = value
     }
 
-    fun resetToBuilder() {
-        sqlEdited = false
-        rebuild()
-    }
+    fun resetToBuilder() = rebuild()
 
     /** Runs the SQL; a write first shows its confirm sheet when "Confirm before saving" is on. */
     fun run() {
+        if (mode == Mode.BUILDER) rebuild()
         val text = sql.text.trim()
         if (text.isEmpty()) return
         if (classifySql(text) == SqlKind.WRITE && prefs.confirmWrites) confirming = text else execute(text)

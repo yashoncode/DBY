@@ -2,6 +2,7 @@ package com.dby.mobile
 
 import com.dby.mobile.ui.Span
 import com.dby.mobile.ui.Token
+import com.dby.mobile.ui.jsonSpans
 import com.dby.mobile.ui.sqlSpans
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -30,5 +31,14 @@ class SqlTest {
     fun block_comments_and_backslash_escapes() {
         assertEquals(listOf("/* a */" to Token.Comment, "'a\\'b'" to Token.Text), tokens("/* a */ 'a\\'b'"))
         assertEquals(listOf(Span(0, 6, Token.Keyword)), sqlSpans("UPDATE"))
+    }
+
+    @Test
+    fun json_keys_values_and_numbers_are_coloured() {
+        val json = """{"k": "v", "n": -1.5e3, "b": true}"""
+        assertEquals(
+            listOf("\"k\"" to Token.Keyword, "\"v\"" to Token.Text, "\"n\"" to Token.Keyword, "-1.5e3" to Token.Number, "\"b\"" to Token.Keyword, "true" to Token.Number),
+            jsonSpans(json).map { json.substring(it.start, it.end) to it.token },
+        )
     }
 }

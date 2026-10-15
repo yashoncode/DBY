@@ -20,14 +20,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.dby.core.Cell
 import com.dby.core.CellRequest
 import com.dby.mobile.data.count
 import com.dby.mobile.data.display
 import com.dby.mobile.data.isTrimmed
+import com.dby.mobile.data.prettyJson
 import com.dby.mobile.data.rawText
 import com.dby.mobile.ui.DbyIcons
+import com.dby.mobile.ui.highlightJson
 import com.dby.mobile.ui.common.Busy
 import com.dby.mobile.ui.common.ProblemBanner
 import com.dby.mobile.ui.common.RoundButton
@@ -39,18 +42,6 @@ import com.dby.mobile.ui.glass.lightGlass
 import com.dby.mobile.ui.theme.Dby
 import com.dby.mobile.ui.theme.Type
 import com.kyant.backdrop.Backdrop
-import org.json.JSONArray
-import org.json.JSONObject
-
-/** Pretty-printed JSON, or null when the text is not a JSON object or array. */
-private fun prettyJson(text: String): String? = runCatching {
-    val t = text.trim()
-    when {
-        t.startsWith("{") -> JSONObject(t).toString(2)
-        t.startsWith("[") -> JSONArray(t).toString(2)
-        else -> null
-    }
-}.getOrNull()
 
 /** Bytes as an offset / hex / text dump, 16 per line. */
 private fun hexDump(bytes: ByteArray): String = bytes.toList().chunked(16).withIndex().joinToString("\n") { (line, chunk) ->
@@ -103,7 +94,7 @@ fun CellViewer(model: TableModel, row: Int, column: Int, backdrop: Backdrop, onD
             Modifier.fillMaxWidth().heightIn(max = 520.dp).lightGlass(RoundedCornerShape(18.dp)).verticalScroll(rememberScrollState()),
         ) {
             Text(
-                if (pretty && json != null) json else text,
+                if (pretty && json != null) highlightJson(json) else AnnotatedString(text),
                 style = Type.MonoSmall,
                 modifier = Modifier.horizontalScroll(rememberScrollState()).padding(16.dp),
             )
